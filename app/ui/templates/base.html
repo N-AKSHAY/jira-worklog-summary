@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Jira Worklog Summary</title>
+    <style>
+        body {
+            font-family: "Segoe UI", Arial, sans-serif;
+            margin: 0;
+            background: #f5f7fa;
+        }
+
+        /* Sticky header (red-marked section) */
+        .header {
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            background: #ffffff;
+            border-bottom: 2px solid #e0e0e0;
+            padding: 20px 30px;
+        }
+
+        .header h2 {
+            margin: 0 0 8px 0;
+        }
+
+        .help-link {
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+
+        .help-link a {
+            color: #0052cc;
+            text-decoration: none;
+        }
+
+        .help-link a:hover {
+            text-decoration: underline;
+        }
+
+        /* Form row */
+        .form-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr auto;
+            gap: 12px;
+            align-items: end;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            font-size: 14px;
+        }
+
+        input[type="text"],
+        input[type="date"] {
+            padding: 6px 8px;
+            font-size: 14px;
+        }
+
+        button {
+            padding: 8px 14px;
+            background: #0052cc;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        button:hover {
+            background: #003d99;
+        }
+
+        /* Scrollable content */
+        .content {
+            padding: 25px 30px;
+        }
+
+        /* Day card */
+        .day {
+            background: #ffffff;
+            border-radius: 6px;
+            padding: 16px 20px;
+            margin-bottom: 25px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        }
+
+        .day-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #172b4d;
+        }
+
+        .summary {
+            color: #0052cc;
+            font-weight: 600;
+        }
+
+        /* Issue card */
+        .issue {
+            border-left: 4px solid #0052CC;
+            padding: 10px 14px;
+            margin: 12px 0;
+            background: #fafbfc;
+        }
+
+        .issue-title {
+            font-weight: 600;
+        }
+
+        .issue-meta {
+            font-size: 13px;
+            color: #555;
+            margin-bottom: 4px;
+        }
+
+        .worklog {
+            margin-left: 18px;
+            font-size: 14px;
+            margin-top: 4px;
+        }
+
+        .no-data {
+            background: #fff3cd;
+            border: 1px solid #ffeeba;
+            color: #856404;
+            padding: 20px;
+            border-radius: 6px;
+            margin-top: 20px;
+        }
+
+    </style>
+</head>
+<body>
+
+{% block content %}{% endblock %}
+
+</body>
+</html>

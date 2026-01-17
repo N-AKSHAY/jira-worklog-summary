@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+{% block content %}
+
+<!-- Sticky Header -->
+<div class="header">
+    <h2>Jira Worklog Summary</h2>
+
+    <div class="help-link">
+        <a href="https://stabilixsolutions.atlassian.net/rest/api/3/myself"
+           target="_blank" rel="noopener noreferrer">
+            Get your Jira accountId
+        </a>
+    </div>
+
+    <form method="post" id="worklogForm">
+        <div class="form-row">
+            <div class="form-group">
+                <label>Account ID</label>
+                <input type="text"
+                       name="accountId"
+                       value="{{ accountId or '' }}"
+                       required>
+            </div>
+
+            <div class="form-group">
+                <label>Start Date</label>
+                <input type="date"
+                       name="startDate"
+                       id="startDate"
+                       value="{{ startDate or '' }}"
+                       required>
+            </div>
+
+            <div class="form-group">
+                <label>End Date</label>
+                <input type="date"
+                       name="endDate"
+                       id="endDate"
+                       value="{{ endDate or '' }}"
+                       required>
+            </div>
+
+            <button type="submit">Generate</button>
+        </div>
+    </form>
+</div>
+
+<!-- Scrollable Content -->
+<div class="content">
+{% if data and data|length > 0 %}
+    {% for day in data %}
+        <div class="day">
+            <div class="day-title">
+                {{ day.workDateFormatted }} —
+                <span class="summary">
+                    {{ day.daySummary.totalTimeSpentFormatted }}
+                </span>
+            </div>
+
+            {% for issue in day.issues %}
+                <div class="issue">
+                    <div class="issue-title">
+                        {{ issue.issueKey }} — {{ issue.issueSummary }}
+                    </div>
+
+                    <div class="issue-meta">
+                        Reported by: {{ issue.reportedBy.displayName }} |
+                        Total: {{ issue.worklogSummary.totalTimeSpentFormatted }}
+                    </div>
+
+                    {% for wl in issue.worklogs %}
+                        <div class="worklog">
+                            • {{ wl.timeSpentFormatted }} — {{ wl.comment }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endfor %}
+        </div>
+    {% endfor %}
+
+{% elif data is not none %}
+    <div class="no-data">
+        <h3>No worklogs found</h3>
+        <p>
+            There are no worklogs available for the selected date range.<br>
+            Please verify the <b>Account ID</b> or try a different date range.
+        </p>
+    </div>
+{% endif %}
+</div>
+
+<!-- ✅ FIXED DATE VALIDATION SCRIPT -->
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const form = document.getElementById("worklogForm");
+    const startDateInput = document.getElementById("startDate");
+    const endDateInput = document.getElementById("endDate");
+
+    // ✅ Apply min on page load (fixes first submit issue)
+    if (startDateInput.value) {
+        endDateInput.min = startDateInput.value;
+    }
+
+    // ✅ Update min when start date changes
+    startDateInput.addEventListener("change", function () {
+        endDateInput.min = this.value;
+
+        if (endDateInput.value && endDateInput.value < this.value) {
+            endDateInput.value = "";
+        }
+    });
+
+    // ✅ Final safety check before submit
+    form.addEventListener("submit", function (event) {
+        if (
+            startDateInput.value &&
+            endDateInput.value &&
+            endDateInput.value < startDateInput.value
+        ) {
+            event.preventDefault();
+            alert("End Date must be greater than or equal to Start Date.");
+            endDateInput.focus();
+        }
+    });
+});
+</script>
+
+{% endblock %}

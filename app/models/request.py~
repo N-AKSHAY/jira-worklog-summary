@@ -1,0 +1,12 @@
+from pydantic import BaseModel, Field
+from typing import List, Optional
+from datetime import date
+
+
+class WorklogSummaryRequest(BaseModel):
+    accountId: str = Field(..., description="Jira accountId of employee(https://stabilixsolutions.atlassian.net/rest/api/3/myself)")
+    startDate: date
+    endDate: date
+    projectKeys: Optional[List[str]] = None
+    includeWorklogDetails: bool = True
+    pageSize: int = 100
