@@ -6,7 +6,8 @@ from typing import Optional
 from app.core.config import (
     JIRA_EMAIL,
     JIRA_API_TOKEN,
-    JIRA_DOMAIN
+    JIRA_DOMAIN,
+    JIRA_API_BASE_URL
 )
 from app.utils.helpers import extract_comment, format_seconds
 
@@ -15,7 +16,13 @@ HEADERS = {
 }
 
 
-def get_worklog_summary(account_id: str, start_date: str, end_date: str, access_token: Optional[str] = None):
+def get_api_base_url(access_token: Optional[str] = None, cloud_id: Optional[str] = None) -> str:
+    if access_token and cloud_id:
+        return f"{JIRA_API_BASE_URL}/ex/jira/{cloud_id}"
+    return f"https://{JIRA_DOMAIN}"
+
+
+def get_worklog_summary(account_id: str, start_date: str, end_date: str, access_token: Optional[str] = None, cloud_id: Optional[str] = None):
     """Fetch and summarize Jira work logs for a user within a date range."""
     jql = (
         f'worklogAuthor = "{account_id}" '
@@ -23,7 +30,8 @@ def get_worklog_summary(account_id: str, start_date: str, end_date: str, access_
         f'AND worklogDate <= {end_date}'
     )
 
-    search_url = f"https://{JIRA_DOMAIN}/rest/api/3/search/jql"
+    base_url = get_api_base_url(access_token, cloud_id)
+    search_url = f"{base_url}/rest/api/3/search"
 
     params = {
         "jql": jql,
@@ -60,7 +68,7 @@ def get_worklog_summary(account_id: str, start_date: str, end_date: str, access_
             "displayName": reporter.get("displayName")
         }
 
-        worklog_url = f"https://{JIRA_DOMAIN}/rest/api/3/issue/{issue_key}/worklog"
+        worklog_url = f"{base_url}/rest/api/3/issue/{issue_key}/worklog"
         wl_response = requests.get(worklog_url, headers=headers, auth=auth)
         wl_response.raise_for_status()
 

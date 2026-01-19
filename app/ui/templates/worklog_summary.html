@@ -7,11 +7,32 @@
         <h2 style="margin: 0;">Jira Worklog Summary</h2>
         <div style="display: flex; align-items: center; gap: 15px;">
             {% if user %}
-            <span style="font-size: 14px; color: #5e6c84;">
-                {{ user.displayName }} ({{ user.accountId }})
-            </span>
+            <div class="user-profile">
+                {% if user.avatarUrl %}
+                <img src="{{ user.avatarUrl }}" 
+                     alt="{{ user.displayName }}" 
+                     class="user-avatar"
+                     onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-block';">
+                <div class="user-avatar-fallback" style="display: none;">
+                    {{ user.displayName[0:2].upper() }}
+                </div>
+                {% else %}
+                <div class="user-avatar-fallback">
+                    {{ user.displayName[0:2].upper() }}
+                </div>
+                {% endif %}
+                <div class="user-details">
+                    <div class="user-name">{{ user.displayName }}</div>
+                    {% if user.email %}
+                    <div class="user-email">{{ user.email }}</div>
+                    {% endif %}
+                    {% if user.timeZone %}
+                    <div class="user-meta">{{ user.timeZone }}</div>
+                    {% endif %}
+                </div>
+            </div>
             {% endif %}
-            <a href="/auth/logout" style="padding: 6px 12px; background: #de350b; color: white; text-decoration: none; border-radius: 4px; font-size: 14px; font-weight: 500;">
+            <a href="/auth/logout" class="logout-button">
                 Logout
             </a>
         </div>
