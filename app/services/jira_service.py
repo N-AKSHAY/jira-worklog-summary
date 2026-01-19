@@ -1,6 +1,7 @@
 import requests
 from requests.auth import HTTPBasicAuth
 from datetime import datetime
+from typing import Optional
 
 from app.core.config import (
     JIRA_EMAIL,
@@ -9,14 +10,12 @@ from app.core.config import (
 )
 from app.utils.helpers import extract_comment, format_seconds
 
-auth = HTTPBasicAuth(JIRA_EMAIL, JIRA_API_TOKEN)
-
 HEADERS = {
     "Accept": "application/json"
 }
 
 
-def get_worklog_summary(account_id: str, start_date: str, end_date: str):
+def get_worklog_summary(account_id: str, start_date: str, end_date: str, access_token: Optional[str] = None):
     """Fetch and summarize Jira work logs for a user within a date range."""
     jql = (
         f'worklogAuthor = "{account_id}" '
@@ -33,7 +32,17 @@ def get_worklog_summary(account_id: str, start_date: str, end_date: str):
         "maxResults": 100
     }
 
-    response = requests.get(search_url, headers=HEADERS, auth=auth, params=params)
+    headers = HEADERS.copy()
+    auth = None
+    
+    if access_token:
+        headers["Authorization"] = f"Bearer {access_token}"
+    elif JIRA_EMAIL and JIRA_API_TOKEN:
+        auth = HTTPBasicAuth(JIRA_EMAIL, JIRA_API_TOKEN)
+    else:
+        raise ValueError("No authentication method available. Either access_token or JIRA_EMAIL/JIRA_API_TOKEN must be provided.")
+
+    response = requests.get(search_url, headers=headers, auth=auth, params=params)
     response.raise_for_status()
 
     issues = response.json().get("issues", [])
@@ -52,7 +61,7 @@ def get_worklog_summary(account_id: str, start_date: str, end_date: str):
         }
 
         worklog_url = f"https://{JIRA_DOMAIN}/rest/api/3/issue/{issue_key}/worklog"
-        wl_response = requests.get(worklog_url, headers=HEADERS, auth=auth)
+        wl_response = requests.get(worklog_url, headers=headers, auth=auth)
         wl_response.raise_for_status()
 
         for wl in wl_response.json().get("worklogs", []):
