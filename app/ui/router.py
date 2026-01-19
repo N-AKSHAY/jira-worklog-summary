@@ -1,6 +1,7 @@
 """UI routes and templates."""
 
 from pathlib import Path
+from datetime import date
 from fastapi import APIRouter, Request, Form, HTTPException, Depends
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
@@ -48,11 +49,14 @@ def worklog_form(
     if isinstance(user, RedirectResponse):
         return user
     
+    today = date.today().isoformat()
+    
     return templates.TemplateResponse(
         "worklog_summary.html",
         {
             "request": request,
             "data": None,
+            "endDate": today,
             "user": _build_user_context(user, request)
         }
     )

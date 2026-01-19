@@ -4,6 +4,7 @@ import requests
 from requests.auth import HTTPBasicAuth
 from typing import List, Dict, Any, Optional
 import logging
+from fastapi import HTTPException
 
 from app.domain.interfaces import IJiraClient
 from app.core.config import (
@@ -40,22 +41,48 @@ class JiraClient(IJiraClient):
         raise ValueError("No authentication method available")
 
     def search_issues(self, jql: str, fields: List[str], start_at: int = 0, max_results: int = 100) -> Dict[str, Any]:
-        url = f"{self._base_url}/rest/api/3/search"
+        url = f"{self._base_url}/rest/api/3/search/jql"
         params = {
             "jql": jql,
             "fields": ",".join(fields),
             "startAt": start_at,
             "maxResults": max_results
         }
-        response = requests.get(url, headers=self._headers, auth=self._auth, params=params)
-        response.raise_for_status()
-        return response.json()
+        try:
+            response = requests.get(url, headers=self._headers, auth=self._auth, params=params)
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.HTTPError as e:
+            logger.error(f"Jira API error: {e.response.status_code} - {e.response.text}")
+            raise HTTPException(
+                status_code=e.response.status_code,
+                detail=f"Jira API error: {e.response.text}"
+            )
+        except Exception as e:
+            logger.error(f"Unexpected error in Jira API call: {str(e)}", exc_info=True)
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to query Jira API: {str(e)}"
+            )
 
     def get_issue_worklogs(self, issue_key: str) -> List[Dict[str, Any]]:
         url = f"{self._base_url}/rest/api/3/issue/{issue_key}/worklog"
-        response = requests.get(url, headers=self._headers, auth=self._auth)
-        response.raise_for_status()
-        return response.json().get("worklogs", [])
+        try:
+            response = requests.get(url, headers=self._headers, auth=self._auth)
+            response.raise_for_status()
+            return response.json().get("worklogs", [])
+        except requests.exceptions.HTTPError as e:
+            logger.error(f"Failed to get worklogs for {issue_key}: {e.response.status_code} - {e.response.text}")
+            raise HTTPException(
+                status_code=e.response.status_code,
+                detail=f"Failed to retrieve worklogs for issue {issue_key}: {e.response.text}"
+            )
+        except Exception as e:
+            logger.error(f"Unexpected error getting worklogs: {str(e)}", exc_info=True)
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to retrieve worklogs: {str(e)}"
+            )
 
     def get_user_info(self, access_token: str) -> Dict[str, Any]:
         from app.core.auth import get_cloud_id, get_user_info as fetch_user_info
