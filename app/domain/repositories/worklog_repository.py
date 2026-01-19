@@ -19,17 +19,22 @@ class WorklogRepository(IWorklogRepository):
         start_date: str,
         end_date: str
     ) -> List[Dict[str, Any]]:
-        jql = (
-            f'worklogAuthor = "{account_id}" '
-            f'AND worklogDate >= {start_date} '
-            f'AND worklogDate <= {end_date}'
-        )
-
-        search_result = self._jira_client.search_issues(
-            jql=jql,
-            fields=["summary", "reporter"],
-            max_results=100
-        )
+        try:
+            jql = f'worklogAuthor = "{account_id}"'
+            
+            search_result = self._jira_client.search_issues(
+                jql=jql,
+                fields=["summary", "reporter"],
+                max_results=100
+            )
+        except Exception as e:
+            from fastapi import HTTPException
+            if isinstance(e, HTTPException):
+                raise
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to search Jira issues: {str(e)}"
+            )
 
         issues = search_result.get("issues", [])
         daily_data = {}
