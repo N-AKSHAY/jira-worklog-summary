@@ -4,13 +4,16 @@ from typing import List, Dict, Any
 from datetime import datetime
 
 from app.domain.interfaces import IWorklogRepository, IJiraClient
+from app.core.base import BaseRepository
+from app.core.exceptions import RepositoryError, ExternalServiceError
 from app.utils.helpers import extract_comment, format_seconds
 
 
-class WorklogRepository(IWorklogRepository):
+class WorklogRepository(BaseRepository, IWorklogRepository):
     """Repository for worklog data access."""
 
     def __init__(self, jira_client: IJiraClient):
+        super().__init__()
         self._jira_client = jira_client
 
     def get_worklogs_by_date_range(
@@ -27,13 +30,17 @@ class WorklogRepository(IWorklogRepository):
                 fields=["summary", "reporter"],
                 max_results=100
             )
+        except ExternalServiceError:
+            raise
         except Exception as e:
-            from fastapi import HTTPException
-            if isinstance(e, HTTPException):
-                raise
-            raise HTTPException(
-                status_code=500,
-                detail=f"Failed to search Jira issues: {str(e)}"
+            self._handle_error(
+                error=e,
+                operation="get_worklogs_by_date_range",
+                context={
+                    "account_id": account_id,
+                    "start_date": start_date,
+                    "end_date": end_date
+                }
             )
 
         issues = search_result.get("issues", [])
@@ -50,7 +57,15 @@ class WorklogRepository(IWorklogRepository):
                 "displayName": reporter.get("displayName")
             }
 
-            worklogs = self._jira_client.get_issue_worklogs(issue_key)
+            try:
+                worklogs = self._jira_client.get_issue_worklogs(issue_key)
+            except Exception as e:
+                self.logger.warning(
+                    f"Failed to fetch worklogs for issue {issue_key}",
+                    extra={"issue_key": issue_key},
+                    exc_info=e
+                )
+                continue
 
             for wl in worklogs:
                 if wl["author"]["accountId"] != account_id:

@@ -79,10 +79,6 @@ def clear_session(request: Request):
     ])
 
 
-def delete_session(request: Request):
-    clear_session(request)
-
-
 def get_access_token(request: Request) -> Optional[str]:
     return get_session_data(request, "access_token")
 
@@ -119,9 +115,11 @@ def set_user_info(request: Request, user_info: dict):
 
 
 def apply_session_cookies(response: Response, request: Request):
+    """Apply session cookies to response and cleanup request state."""
     if hasattr(request.state, 'cookies_to_delete'):
         for cookie_name in request.state.cookies_to_delete:
             response.delete_cookie(cookie_name, path="/")
+        delattr(request.state, 'cookies_to_delete')
     
     if hasattr(request.state, 'session_cookies'):
         for cookie_name, cookie_value in request.state.session_cookies.items():
@@ -137,3 +135,4 @@ def apply_session_cookies(response: Response, request: Request):
                     secure=False,
                     path="/"
                 )
+        delattr(request.state, 'session_cookies')

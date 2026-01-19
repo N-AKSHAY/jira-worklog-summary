@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Authorization Denied - Jira Worklog Summary</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="antialiased bg-gray-50">
+    <div class="flex min-h-screen flex-col items-center justify-center px-4">
+        <div class="w-full max-w-md">
+            <div class="bg-white rounded-2xl shadow-lg p-8 text-center">
+                <div class="flex justify-center mb-6">
+                    <div class="w-20 h-20 rounded-full bg-red-100 flex items-center justify-center">
+                        <svg class="w-10 h-10 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </div>
+                </div>
+                
+                <h1 class="text-2xl font-bold text-gray-900 mb-3">Authorization Denied</h1>
+                
+                <p class="text-gray-600 mb-6 leading-relaxed">
+                    You have cancelled the authorization process. To access the Jira Worklog Summary, you need to authorize the application.
+                </p>
+                
+                <div class="space-y-3">
+                    <a href="/auth/login" 
+                       class="block w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200 flex items-center justify-center space-x-3 shadow-md hover:shadow-lg">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path>
+                        </svg>
+                        <span>Try Again</span>
+                    </a>
+                    
+                    <p class="text-xs text-gray-500 mt-4">
+                        If you continue to experience issues, please contact support.
+                    </p>
+                </div>
+            </div>
+            
+            <div class="mt-6 text-center">
+                <img src="/static/img/logo.png" alt="Stabilix Logo" class="h-8 w-auto mx-auto opacity-50">
+            </div>
+        </div>
+    </div>
+</body>
+</html>

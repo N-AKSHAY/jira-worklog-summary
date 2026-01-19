@@ -3,10 +3,7 @@ import os
 
 load_dotenv()
 
-JIRA_EMAIL = os.getenv("JIRA_EMAIL")
-JIRA_API_TOKEN = os.getenv("JIRA_API_TOKEN")
 JIRA_DOMAIN = os.getenv("JIRA_DOMAIN")
-TEMPLATE_PATH = os.getenv("TEMPLATE_PATH", "app/ui/templates")
 
 JIRA_OAUTH_CLIENT_ID = os.getenv("JIRA_OAUTH_CLIENT_ID")
 JIRA_OAUTH_CLIENT_SECRET = os.getenv("JIRA_OAUTH_CLIENT_SECRET")
@@ -31,7 +28,6 @@ if not JIRA_DOMAIN:
     raise RuntimeError("Missing JIRA_DOMAIN in .env file")
 
 if not all([JIRA_OAUTH_CLIENT_ID, JIRA_OAUTH_CLIENT_SECRET]):
-    if not all([JIRA_EMAIL, JIRA_API_TOKEN]):
-        raise RuntimeError(
-            "Missing Jira configuration: Either OAuth credentials or API token must be provided in .env file"
-        )
+    raise RuntimeError(
+        "Missing Jira OAuth configuration: JIRA_OAUTH_CLIENT_ID and JIRA_OAUTH_CLIENT_SECRET must be provided in .env file"
+    )

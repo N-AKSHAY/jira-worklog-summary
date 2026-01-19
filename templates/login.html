@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jira Worklog Summary - Login</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+    </style>
+</head>
+<body class="antialiased">
+    <div class="flex min-h-screen flex-col lg:flex-row">
+        <!-- Left Section - Promotional -->
+        <div class="hidden lg:flex lg:w-1/2 bg-blue-600 flex-col justify-between p-12 text-white">
+            <div>
+                <div class="max-w-md">
+                    <h1 class="text-5xl font-bold mb-6 leading-tight">
+                        Worklog Management Platform
+                    </h1>
+                    <p class="text-lg mb-12 text-blue-100 leading-relaxed">
+                        Streamline your worklog tracking and reporting. Analyze time spent, generate summaries, and manage Jira worklogs all in one place.
+                    </p>
+                    
+                    <div class="grid grid-cols-2 gap-6">
+                        <div class="flex flex-col space-y-2">
+                            <div class="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center mb-2">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                </svg>
+                            </div>
+                            <span class="font-semibold">Daily Reports</span>
+                            <span class="text-sm text-blue-100">Track daily worklogs</span>
+                        </div>
+                        
+                        <div class="flex flex-col space-y-2">
+                            <div class="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center mb-2">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                                </svg>
+                            </div>
+                            <span class="font-semibold">Issue Tracking</span>
+                            <span class="text-sm text-blue-100">Monitor work by issue</span>
+                        </div>
+                        
+                        <div class="flex flex-col space-y-2">
+                            <div class="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center mb-2">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                                </svg>
+                            </div>
+                            <span class="font-semibold">Secure Access</span>
+                            <span class="text-sm text-blue-100">OAuth 2.0 authentication</span>
+                        </div>
+                        
+                        <div class="flex flex-col space-y-2">
+                            <div class="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center mb-2">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                                </svg>
+                            </div>
+                            <span class="font-semibold">Time Analytics</span>
+                            <span class="text-sm text-blue-100">Detailed time insights</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="text-sm text-blue-100">
+                © 2024 Stabilix Solutions. All rights reserved.
+            </div>
+        </div>
+        
+        <!-- Right Section - Login Form -->
+        <div class="w-full lg:w-1/2 flex items-center justify-center bg-white p-4 sm:p-8">
+            <div class="w-full max-w-md">
+                <!-- Logo and Title -->
+                <div class="mb-8 text-center">
+                    <img src="/static/img/logo.png" alt="Logo" class="h-10 w-auto mx-auto mb-4">
+                    <div class="text-2xl font-bold text-gray-900">Jira Worklog Summary</div>
+                </div>
+                
+                <div class="bg-white rounded-2xl shadow-lg p-6 sm:p-8">
+                    <div class="text-center mb-8">
+                        <h2 class="text-3xl font-bold text-gray-900 mb-2">Welcome Back</h2>
+                        <p class="text-gray-600">Sign in to your account to continue tracking your Jira worklogs</p>
+                    </div>
+                    
+                    <div class="space-y-6">
+                        <a 
+                            href="/auth/authorize"
+                            class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 px-6 rounded-lg transition-colors duration-200 flex items-center justify-center space-x-3 shadow-md hover:shadow-lg"
+                        >
+                            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h4.572V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714Z"/>
+                            </svg>
+                            <span class="text-lg">Sign In with Jira</span>
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
+                            </svg>
+                        </a>
+                        
+                        <div class="text-center pt-2">
+                            <p class="text-sm text-gray-500">
+                                Secure OAuth 2.0 authentication with your Atlassian account
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

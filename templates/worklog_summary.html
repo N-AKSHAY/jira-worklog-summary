@@ -1,0 +1,387 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="min-h-screen bg-background flex flex-col">
+    <!-- Sticky Header -->
+    <header class="sticky top-0 z-50 w-full border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex h-16 items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <img src="/static/img/logo.png" alt="Stabilix Logo" class="h-8 w-auto">
+                    <h1 class="text-2xl font-semibold tracking-tight">Jira Worklog Summary</h1>
+                </div>
+                
+                <div class="flex items-center gap-4">
+                    {% if user %}
+                    <div class="flex items-center gap-3 rounded-lg border bg-muted/50 px-3 py-2">
+                        {% if user.avatarUrl %}
+                        <img src="{{ user.avatarUrl }}" 
+                             alt="{{ user.displayName }}" 
+                             class="h-8 w-8 rounded-full border-2 border-border object-cover"
+                             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                        <div class="hidden h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-semibold border-2 border-border">
+                            {{ user.displayName[0:2].upper() }}
+                        </div>
+                        {% else %}
+                        <div class="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-semibold border-2 border-border">
+                            {{ user.displayName[0:2].upper() }}
+                        </div>
+                        {% endif %}
+                        <div class="flex flex-col">
+                            <span class="text-sm font-medium leading-none">{{ user.displayName }}</span>
+                            {% if user.email %}
+                            <span class="text-xs text-muted-foreground">{{ user.email }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    <button type="button" 
+                            id="logoutButton"
+                            class="inline-flex items-center justify-center rounded-md p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                            title="Logout">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Logout Confirmation Modal -->
+    <div id="logoutModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+        <div class="bg-card rounded-lg border border-border shadow-lg max-w-md w-full mx-4">
+            <div class="p-6">
+                <div class="flex items-center gap-4 mb-4">
+                    <div class="flex-shrink-0 w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center">
+                        <svg class="w-6 h-6 text-destructive" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                        </svg>
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="text-lg font-semibold text-foreground">Confirm Logout</h3>
+                        <p class="text-sm text-muted-foreground mt-1">Are you sure you want to logout?</p>
+                    </div>
+                </div>
+                <div class="flex items-center justify-end gap-3 mt-6">
+                    <button type="button" 
+                            id="cancelLogout"
+                            class="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+                        Cancel
+                    </button>
+                    <a href="/auth/logout" 
+                       id="confirmLogout"
+                       class="inline-flex items-center justify-center rounded-md bg-destructive px-4 py-2 text-sm font-medium text-destructive-foreground shadow-sm transition-colors hover:bg-destructive/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+                        Logout
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Form Section -->
+    <div class="border-b bg-card">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <form method="post" id="worklogForm">
+                <div class="flex flex-col sm:flex-row gap-3 items-end justify-between">
+                    <div class="flex flex-col sm:flex-row gap-3 items-end flex-1">
+                    <div class="w-full sm:w-auto space-y-1.5">
+                        <label for="dateRange" class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                            Date Range
+                        </label>
+                        <input type="text"
+                               name="dateRange"
+                               id="dateRange"
+                               placeholder="Select date range"
+                               readonly
+                               class="flex h-10 w-full sm:w-64 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer">
+                        <input type="hidden" name="startDate" id="startDate" value="{{ startDate or '' }}" required>
+                        <input type="hidden" name="endDate" id="endDate" value="{{ endDate or '' }}" required>
+                    </div>
+
+                    <button type="submit" 
+                            class="inline-flex items-center justify-center rounded-md bg-primary px-6 py-2 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-10 whitespace-nowrap">
+                        <span class="generate-text">Generate</span>
+                        <svg class="hidden animate-spin h-4 w-4 ml-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                    </button>
+                    
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs text-muted-foreground">View:</span>
+                            <button type="button" 
+                                    id="viewToggle"
+                                    class="inline-flex items-center justify-center rounded-md border border-input bg-background px-3 py-1.5 text-xs font-medium text-foreground shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+                                <svg class="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                                </svg>
+                                <span class="view-toggle-text">Table</span>
+                            </button>
+                        </div>
+                        <div class="flex flex-wrap gap-2">
+                        <button type="button" 
+                                data-range="today"
+                                class="quick-range-btn inline-flex items-center justify-center rounded-md border border-input bg-background px-3 py-1.5 text-xs font-medium text-foreground shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+                            Today
+                        </button>
+                        <button type="button" 
+                                data-range="yesterday"
+                                class="quick-range-btn inline-flex items-center justify-center rounded-md border border-input bg-background px-3 py-1.5 text-xs font-medium text-foreground shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+                            Yesterday
+                        </button>
+                        <button type="button" 
+                                data-range="thisWeek"
+                                class="quick-range-btn inline-flex items-center justify-center rounded-md border border-input bg-background px-3 py-1.5 text-xs font-medium text-foreground shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+                            This Week
+                        </button>
+                        <button type="button" 
+                                data-range="thisMonth"
+                                class="quick-range-btn inline-flex items-center justify-center rounded-md border border-input bg-background px-3 py-1.5 text-xs font-medium text-foreground shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+                            This Month
+                        </button>
+                        <button type="button" 
+                                data-range="lastMonth"
+                                class="quick-range-btn inline-flex items-center justify-center rounded-md border border-input bg-background px-3 py-1.5 text-xs font-medium text-foreground shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+                            Last Month
+                        </button>
+                        <button type="button" 
+                                data-range="thisYear"
+                                class="quick-range-btn inline-flex items-center justify-center rounded-md border border-input bg-background px-3 py-1.5 text-xs font-medium text-foreground shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+                            This Year
+                        </button>
+                        <button type="button" 
+                                data-range="lastYear"
+                                class="quick-range-btn inline-flex items-center justify-center rounded-md border border-input bg-background px-3 py-1.5 text-xs font-medium text-foreground shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+                            Last Year
+                        </button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Content Section -->
+    <main class="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Loading Indicator -->
+        <div id="loadingIndicator" class="hidden flex items-center justify-center py-12">
+            <div class="flex flex-col items-center gap-4">
+                <svg class="animate-spin h-12 w-12 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <p class="text-sm text-muted-foreground font-medium">Generating report...</p>
+            </div>
+        </div>
+        
+        <!-- Error Container -->
+        <div id="errorContainer" class="hidden mb-6"></div>
+        
+        <!-- Results Container -->
+        {% if data and data|length > 0 %}
+        <script type="application/json" id="serverData">{{ data | tojson }}</script>
+        {% endif %}
+        <div id="resultsContainer">
+            {% if data and data|length > 0 %}
+                <div class="space-y-4">
+                    {% for day in data %}
+                        {% set total_hours = (day.daySummary.totalTimeSpentSeconds / 3600) | float %}
+                        {% set is_critical = total_hours < 4 %}
+                        {% set is_warning = total_hours < 8 and total_hours >= 4 %}
+                        <div class="group rounded-xl border bg-card text-card-foreground shadow-sm hover:shadow-md transition-all duration-200 {% if is_critical %}worklog-day-critical{% elif is_warning %}worklog-day-warning{% endif %}" data-day-card>
+                            <div class="p-5">
+                                <div class="flex items-center justify-between mb-4">
+                                    <div class="flex items-center gap-3">
+                                        <div class="flex-shrink-0 w-1 h-12 rounded-full {% if is_critical %}bg-red-500{% elif is_warning %}bg-yellow-500{% else %}bg-primary{% endif %}"></div>
+                                        <div>
+                                            <h2 class="text-lg font-semibold tracking-tight text-foreground">{{ day.workDateFormatted }}</h2>
+                                            <p class="text-xs text-muted-foreground mt-0.5">{{ day.issues|length }} issue{{ 's' if day.issues|length != 1 else '' }}</p>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center gap-3">
+                                        <div class="inline-flex items-center rounded-lg px-3 py-1.5 text-sm font-semibold {% if is_critical %}worklog-badge-critical{% elif is_warning %}worklog-badge-warning{% else %}bg-primary/10 text-primary{% endif %}">
+                                            {{ day.daySummary.totalTimeSpentFormatted }}
+                                        </div>
+                                        <button type="button" 
+                                                class="day-details-toggle inline-flex items-center justify-center rounded-md border border-input bg-background px-3 py-1.5 text-xs font-medium text-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+                                                data-day-index="{{ loop.index0 }}">
+                                            <span class="toggle-text">View Details</span>
+                                            <svg class="toggle-icon ml-1.5 h-3.5 w-3.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="day-summary space-y-3">
+                                    {% for issue in day.issues[:3] %}
+                                        <div class="flex items-start gap-3 p-3 rounded-lg bg-muted/50 hover:bg-muted/70 transition-colors">
+                                            <div class="flex-shrink-0 mt-0.5">
+                                                <div class="w-2 h-2 rounded-full bg-primary"></div>
+                                            </div>
+                                            <div class="flex-1 min-w-0">
+                                                <div class="flex items-start justify-between gap-2">
+                                                    <h3 class="font-medium text-sm leading-tight text-foreground truncate">
+                                                        <span class="font-semibold text-primary">{{ issue.issueKey }}</span>
+                                                        <span class="text-muted-foreground"> — {{ issue.issueSummary }}</span>
+                                                    </h3>
+                                                    <span class="flex-shrink-0 text-xs font-medium text-primary">{{ issue.worklogSummary.totalTimeSpentFormatted }}</span>
+                                                </div>
+                                                <p class="text-xs text-muted-foreground mt-1">{{ issue.worklogs|length }} worklog{{ 's' if issue.worklogs|length != 1 else '' }}</p>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                    {% if day.issues|length > 3 %}
+                                        <div class="text-center py-2">
+                                            <span class="text-xs text-muted-foreground">+{{ day.issues|length - 3 }} more issue{{ 's' if (day.issues|length - 3) != 1 else '' }}</span>
+                                        </div>
+                                    {% endif %}
+                                </div>
+
+                                <div class="day-details hidden mt-4 pt-4 border-t">
+                                    <div class="space-y-4">
+                                        {% for issue in day.issues %}
+                                            <div class="rounded-lg border-l-4 border-primary bg-muted/30 p-4 hover:bg-muted/50 transition-colors">
+                                                <div class="flex items-start justify-between mb-3">
+                                                    <div class="flex-1">
+                                                        <h3 class="font-semibold text-base leading-tight text-foreground mb-1">
+                                                            <span class="text-primary">{{ issue.issueKey }}</span> — {{ issue.issueSummary }}
+                                                        </h3>
+                                                        <div class="flex items-center gap-3 text-xs text-muted-foreground">
+                                                            <span class="flex items-center gap-1">
+                                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                                                                </svg>
+                                                                {{ issue.reportedBy.displayName }}
+                                                            </span>
+                                                            <span>•</span>
+                                                            <span class="font-medium text-primary">{{ issue.worklogSummary.totalTimeSpentFormatted }}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="space-y-2.5 pl-4 border-l-2 border-primary/30">
+                                                    {% for wl in issue.worklogs %}
+                                                        <div class="flex items-start gap-3 py-1.5">
+                                                            <div class="flex-shrink-0 mt-1">
+                                                                <svg class="w-4 h-4 text-primary/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                                                </svg>
+                                                            </div>
+                                                            <div class="flex-1">
+                                                                <div class="flex items-center gap-2 mb-1">
+                                                                    <span class="font-semibold text-sm text-primary">{{ wl.timeSpentFormatted }}</span>
+                                                                </div>
+                                                                {% if wl.comment %}
+                                                                <p class="text-sm text-foreground/80 leading-relaxed">{{ wl.comment }}</p>
+                                                                {% else %}
+                                                                <p class="text-xs text-muted-foreground italic">No comment</p>
+                                                                {% endif %}
+                                                            </div>
+                                                        </div>
+                                                    {% endfor %}
+                                                </div>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% elif data is not none %}
+                <div class="rounded-lg border border-yellow-200 bg-yellow-50 p-6 text-yellow-800">
+                    <h3 class="text-lg font-semibold mb-2">No worklogs found</h3>
+                    <p class="text-sm">
+                        There are no worklogs available for the selected date range.<br>
+                        Please try a different date range.
+                    </p>
+                </div>
+            {% endif %}
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t bg-card mt-auto">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div class="flex items-center gap-2">
+                    <img src="/static/img/logo.png" alt="Stabilix Logo" class="h-6 w-auto opacity-60">
+                    <span class="text-sm text-muted-foreground">© 2024 Stabilix Solutions. All rights reserved.</span>
+                </div>
+                <div class="text-xs text-muted-foreground">
+                    Jira Worklog Summary
+                </div>
+            </div>
+        </div>
+    </footer>
+</div>
+
+<script src="/static/js/worklog-form.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const toggleButtons = document.querySelectorAll('.day-details-toggle');
+    toggleButtons.forEach(button => {
+        button.addEventListener('click', (e) => {
+            const dayCard = button.closest('[data-day-card]');
+            if (!dayCard) return;
+            
+            const detailsSection = dayCard.querySelector('.day-details');
+            const summarySection = dayCard.querySelector('.day-summary');
+            const toggleText = button.querySelector('.toggle-text');
+            const toggleIcon = button.querySelector('.toggle-icon');
+            
+            if (detailsSection && summarySection) {
+                const isHidden = detailsSection.classList.contains('hidden');
+                
+                if (isHidden) {
+                    detailsSection.classList.remove('hidden');
+                    summarySection.classList.add('hidden');
+                    if (toggleText) toggleText.textContent = 'Hide Details';
+                    if (toggleIcon) toggleIcon.style.transform = 'rotate(180deg)';
+                } else {
+                    detailsSection.classList.add('hidden');
+                    summarySection.classList.remove('hidden');
+                    if (toggleText) toggleText.textContent = 'View Details';
+                    if (toggleIcon) toggleIcon.style.transform = 'rotate(0deg)';
+                }
+            }
+        });
+    });
+
+    const logoutButton = document.getElementById('logoutButton');
+    const logoutModal = document.getElementById('logoutModal');
+    const cancelLogout = document.getElementById('cancelLogout');
+    const confirmLogout = document.getElementById('confirmLogout');
+
+    if (logoutButton && logoutModal) {
+        logoutButton.addEventListener('click', () => {
+            logoutModal.classList.remove('hidden');
+        });
+
+        const closeModal = () => {
+            logoutModal.classList.add('hidden');
+        };
+
+        if (cancelLogout) {
+            cancelLogout.addEventListener('click', closeModal);
+        }
+
+        logoutModal.addEventListener('click', (e) => {
+            if (e.target === logoutModal) {
+                closeModal();
+            }
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && !logoutModal.classList.contains('hidden')) {
+                closeModal();
+            }
+        });
+    }
+});
+</script>
+
+{% endblock %}

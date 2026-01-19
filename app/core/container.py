@@ -1,7 +1,6 @@
 """Dependency injection container."""
 
 from typing import Optional
-from fastapi import Request
 
 from app.domain.interfaces import IJiraClient, IWorklogRepository, IWorklogService
 from app.infrastructure.jira_client import JiraClient
@@ -27,9 +26,15 @@ class Container:
         return WorklogRepository(jira_client=jira_client)
 
     @staticmethod
-    def get_worklog_service(worklog_repository: IWorklogRepository) -> IWorklogService:
+    def get_worklog_service(
+        worklog_repository: IWorklogRepository,
+        user_account_id: Optional[str] = None
+    ) -> IWorklogService:
         """Create and return worklog service instance."""
-        return WorklogService(worklog_repository=worklog_repository)
+        return WorklogService(
+            worklog_repository=worklog_repository,
+            user_account_id=user_account_id
+        )
 
     @staticmethod
     def get_worklog_service_for_user(user: AuthenticatedUser) -> IWorklogService:
@@ -39,6 +44,8 @@ class Container:
             cloud_id=user.cloud_id
         )
         repository = Container.get_worklog_repository(jira_client)
-        service = Container.get_worklog_service(repository)
-        service._user_account_id = user.account_id
+        service = Container.get_worklog_service(
+            repository,
+            user_account_id=user.account_id
+        )
         return service

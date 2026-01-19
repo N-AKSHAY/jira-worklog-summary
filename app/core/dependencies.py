@@ -1,4 +1,4 @@
-from fastapi import Depends, HTTPException, Request
+from fastapi import Depends, Request
 from fastapi.responses import RedirectResponse
 from typing import Optional, Union
 
@@ -9,7 +9,8 @@ from app.core.session import (
     set_session_data
 )
 from app.core.auth import refresh_access_token, get_user_info as fetch_user_info
-from app.core.config import JIRA_EMAIL, JIRA_API_TOKEN
+from app.core.exceptions import AuthenticationError
+from app.core.constants import ROUTES
 
 
 class AuthenticatedUser:
@@ -26,8 +27,8 @@ def get_current_user(request: Request) -> Union[AuthenticatedUser, RedirectRespo
     
     if not access_token:
         if request.url.path.startswith("/ui/"):
-            return RedirectResponse(url="/auth/login", status_code=302)
-        raise HTTPException(status_code=401, detail="Not authenticated")
+            return RedirectResponse(url=ROUTES["AUTH_LOGIN"], status_code=302)
+        raise AuthenticationError("Not authenticated")
     
     user_info = get_user_info(request)
     
@@ -48,10 +49,10 @@ def _fetch_or_refresh_user_info(request: Request, access_token: str) -> dict:
         user_info = fetch_user_info(access_token)
         set_session_data(request, "user_info", user_info)
         return user_info
-    except HTTPException:
+    except Exception:
         refresh_token = get_refresh_token(request)
         if not refresh_token:
-            raise HTTPException(status_code=401, detail="Session expired. Please login again.")
+            raise AuthenticationError("Session expired. Please login again.")
         
         try:
             new_tokens = refresh_access_token(refresh_token)
@@ -61,16 +62,7 @@ def _fetch_or_refresh_user_info(request: Request, access_token: str) -> dict:
             user_info = fetch_user_info(new_tokens["access_token"])
             set_session_data(request, "user_info", user_info)
             return user_info
-        except HTTPException:
-            raise HTTPException(status_code=401, detail="Session expired. Please login again.")
+        except Exception:
+            raise AuthenticationError("Session expired. Please login again.")
 
 
-def require_auth(request: Request, user: AuthenticatedUser = Depends(get_current_user)):
-    return user
-
-
-def get_fallback_auth():
-    if JIRA_EMAIL and JIRA_API_TOKEN:
-        from requests.auth import HTTPBasicAuth
-        return HTTPBasicAuth(JIRA_EMAIL, JIRA_API_TOKEN)
-    return None

@@ -6,46 +6,9 @@ if __name__ == "__main__":
     if str(project_root) not in sys.path:
         sys.path.insert(0, str(project_root))
 
-from fastapi import FastAPI
-from fastapi.responses import RedirectResponse
-from fastapi.staticfiles import StaticFiles
-from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.responses import Response as StarletteResponse
-from pathlib import Path
+from app.core.app_config import create_app
 
-from app.api.v1.worklogs import router as worklogs_router
-from app.ui.router import router as ui_router
-from app.auth.router import router as auth_router
-from app.core.session import apply_session_cookies
-
-app = FastAPI(title="Jira Worklog Summary API", version="1.0.0")
-
-BASE_DIR = Path(__file__).resolve().parent
-STATIC_DIR = BASE_DIR / "static"
-
-if STATIC_DIR.exists():
-    app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
-
-
-class SessionCookieMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request, call_next):
-        response = await call_next(request)
-        if isinstance(response, StarletteResponse):
-            apply_session_cookies(response, request)
-        return response
-
-
-app.add_middleware(SessionCookieMiddleware)
-
-
-@app.get("/", tags=["UI"])
-def root():
-    return RedirectResponse(url="/ui/worklogs")
-
-
-app.include_router(worklogs_router)
-app.include_router(auth_router)
-app.include_router(ui_router)
+app = create_app()
 
 
 if __name__ == "__main__":
