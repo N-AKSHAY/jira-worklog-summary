@@ -378,7 +378,10 @@ class WorklogForm {
             const summaryHtml = summaryIssues.map(issue => `
                 <div class="flex items-start gap-3 p-3 rounded-lg bg-muted/50 hover:bg-muted/70 transition-colors">
                     <div class="flex-shrink-0 mt-0.5">
-                        <div class="w-2 h-2 rounded-full bg-primary"></div>
+                        ${issue.issueType?.iconUrl
+                            ? `<img src="${issue.issueType.iconUrl}" alt="${this.escapeHtml(issue.issueType.name || '')}" class="w-4 h-4" title="${this.escapeHtml(issue.issueType.name || '')}">`
+                            : `<div class="w-2 h-2 rounded-full bg-primary"></div>`
+                        }
                     </div>
                     <div class="flex-1 min-w-0">
                         <div class="flex items-start justify-between gap-2">
@@ -388,7 +391,11 @@ class WorklogForm {
                             </h3>
                             <span class="flex-shrink-0 text-xs font-medium text-primary">${issue.worklogSummary.totalTimeSpentFormatted}</span>
                         </div>
-                        <p class="text-xs text-muted-foreground mt-1">${issue.worklogs.length} worklog${issue.worklogs.length !== 1 ? 's' : ''}</p>
+                        <div class="flex items-center gap-2 mt-1 flex-wrap">
+                            <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs ${this.getStatusClass(issue.status?.statusCategory)}">${this.escapeHtml(issue.status?.name || 'Unknown')}</span>
+                            ${issue.priority?.name ? `<span class="text-xs text-muted-foreground">${this.escapeHtml(issue.priority.name)}</span>` : ''}
+                            <span class="text-xs text-muted-foreground">${issue.worklogs.length} worklog${issue.worklogs.length !== 1 ? 's' : ''}</span>
+                        </div>
                     </div>
                 </div>
             `).join('');
@@ -402,41 +409,70 @@ class WorklogForm {
             
             const detailsIssuesHtml = day.issues.map(issue => {
                 const worklogsHtml = issue.worklogs.map(wl => `
-                    <div class="flex items-start gap-3 py-1.5">
+                    <div class="flex items-start gap-3 py-2 border-b border-border/50 last:border-0">
                         <div class="flex-shrink-0 mt-1">
                             <svg class="w-4 h-4 text-primary/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                             </svg>
                         </div>
                         <div class="flex-1">
-                            <div class="flex items-center gap-2 mb-1">
+                            <div class="flex items-center gap-2 mb-1 flex-wrap">
                                 <span class="font-semibold text-sm text-primary">${wl.timeSpentFormatted}</span>
+                                ${wl.startedTime ? `<span class="text-xs text-muted-foreground">@ ${wl.startedTime}</span>` : ''}
+                                ${wl.author?.displayName ? `<span class="text-xs text-muted-foreground">by ${this.escapeHtml(wl.author.displayName)}</span>` : ''}
                             </div>
                             ${wl.comment ? `<p class="text-sm text-foreground/80 leading-relaxed">${this.escapeHtml(wl.comment)}</p>` : '<p class="text-xs text-muted-foreground italic">No comment</p>'}
+                            ${wl.updatedFormatted ? `<p class="text-xs text-muted-foreground mt-1">Updated: ${wl.updatedFormatted}</p>` : ''}
                         </div>
                     </div>
                 `).join('');
-                
+
+                const estimateVsActual = issue.originalEstimateFormatted
+                    ? `<span class="text-xs px-1.5 py-0.5 rounded bg-muted">${issue.worklogSummary.totalTimeSpentFormatted} / ${issue.originalEstimateFormatted} est.</span>`
+                    : '';
+
                 return `
                     <div class="rounded-lg border-l-4 border-primary bg-muted/30 p-4 hover:bg-muted/50 transition-colors">
                         <div class="flex items-start justify-between mb-3">
                             <div class="flex-1">
-                                <h3 class="font-semibold text-base leading-tight text-foreground mb-1">
-                                    <span class="text-primary">${this.escapeHtml(issue.issueKey)}</span> — ${this.escapeHtml(issue.issueSummary)}
-                                </h3>
-                                <div class="flex items-center gap-3 text-xs text-muted-foreground">
-                                    <span class="flex items-center gap-1">
+                                <div class="flex items-center gap-2 mb-1">
+                                    ${issue.issueType?.iconUrl
+                                        ? `<img src="${issue.issueType.iconUrl}" alt="${this.escapeHtml(issue.issueType.name || '')}" class="w-4 h-4" title="${this.escapeHtml(issue.issueType.name || '')}">`
+                                        : ''
+                                    }
+                                    <h3 class="font-semibold text-base leading-tight text-foreground">
+                                        <span class="text-primary">${this.escapeHtml(issue.issueKey)}</span> — ${this.escapeHtml(issue.issueSummary)}
+                                    </h3>
+                                </div>
+                                <div class="flex items-center gap-2 mt-2 flex-wrap">
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${this.getStatusClass(issue.status?.statusCategory)}">${this.escapeHtml(issue.status?.name || 'Unknown')}</span>
+                                    ${issue.priority?.name ? `
+                                        <span class="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                                            ${issue.priority.iconUrl ? `<img src="${issue.priority.iconUrl}" alt="" class="w-3 h-3">` : ''}
+                                            ${this.escapeHtml(issue.priority.name)}
+                                        </span>
+                                    ` : ''}
+                                    ${issue.issueType?.name ? `<span class="text-xs text-muted-foreground">${this.escapeHtml(issue.issueType.name)}</span>` : ''}
+                                </div>
+                                <div class="flex items-center gap-4 mt-2 text-xs text-muted-foreground flex-wrap">
+                                    <span class="flex items-center gap-1" title="Reporter">
                                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
                                         </svg>
-                                        ${this.escapeHtml(issue.reportedBy.displayName)}
+                                        Reporter: ${this.escapeHtml(issue.reportedBy?.displayName || 'Unknown')}
                                     </span>
-                                    <span>•</span>
+                                    <span class="flex items-center gap-1" title="Assignee">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                        </svg>
+                                        Assignee: ${this.escapeHtml(issue.assignee?.displayName || 'Unassigned')}
+                                    </span>
                                     <span class="font-medium text-primary">${issue.worklogSummary.totalTimeSpentFormatted}</span>
+                                    ${estimateVsActual}
                                 </div>
                             </div>
                         </div>
-                        <div class="space-y-2.5 pl-4 border-l-2 border-primary/30">
+                        <div class="space-y-1 pl-4 border-l-2 border-primary/30">
                             ${worklogsHtml}
                         </div>
                     </div>
@@ -488,22 +524,33 @@ class WorklogForm {
     
     renderTableView(data, resultsContainer) {
         const rows = [];
-        
+
         data.forEach(day => {
             day.issues.forEach(issue => {
                 issue.worklogs.forEach(worklog => {
                     rows.push({
                         date: day.workDateFormatted,
+                        startTime: worklog.startedTime || '',
                         issueKey: issue.issueKey,
                         issueSummary: issue.issueSummary,
+                        issueType: issue.issueType?.name || '',
+                        issueTypeIcon: issue.issueType?.iconUrl || '',
+                        status: issue.status?.name || '',
+                        statusCategory: issue.status?.statusCategory || '',
+                        priority: issue.priority?.name || '',
+                        priorityIcon: issue.priority?.iconUrl || '',
                         timeSpent: worklog.timeSpentFormatted,
+                        originalEstimate: issue.originalEstimateFormatted || '',
                         comment: worklog.comment || '',
-                        reportedBy: issue.reportedBy.displayName
+                        reportedBy: issue.reportedBy?.displayName || 'Unknown',
+                        assignee: issue.assignee?.displayName || 'Unassigned',
+                        author: worklog.author?.displayName || '',
+                        updated: worklog.updatedFormatted || ''
                     });
                 });
             });
         });
-        
+
         if (rows.length === 0) {
             resultsContainer.innerHTML = `
                 <div class="rounded-lg border border-yellow-200 bg-yellow-50 p-6 text-yellow-800">
@@ -516,36 +563,62 @@ class WorklogForm {
             `;
             return;
         }
-        
+
         const tableHtml = `
             <div class="overflow-x-auto rounded-lg border border-border">
-                <table class="w-full border-collapse">
+                <table class="w-full border-collapse text-sm">
                     <thead>
                         <tr class="bg-muted/50 border-b border-border">
-                            <th class="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Date</th>
-                            <th class="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Issue</th>
-                            <th class="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Summary</th>
-                            <th class="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Time</th>
-                            <th class="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Comment</th>
-                            <th class="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Reported By</th>
+                            <th class="px-3 py-2 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Date</th>
+                            <th class="px-3 py-2 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Time</th>
+                            <th class="px-3 py-2 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Type</th>
+                            <th class="px-3 py-2 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Issue</th>
+                            <th class="px-3 py-2 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Summary</th>
+                            <th class="px-3 py-2 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Status</th>
+                            <th class="px-3 py-2 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Priority</th>
+                            <th class="px-3 py-2 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Logged</th>
+                            <th class="px-3 py-2 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Est.</th>
+                            <th class="px-3 py-2 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Comment</th>
+                            <th class="px-3 py-2 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Assignee</th>
+                            <th class="px-3 py-2 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Author</th>
+                            <th class="px-3 py-2 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Updated</th>
                         </tr>
                     </thead>
                     <tbody>
                         ${rows.map((row, index) => `
                             <tr class="border-b border-border hover:bg-muted/30 transition-colors ${index % 2 === 0 ? 'bg-card' : 'bg-muted/10'}">
-                                <td class="px-4 py-3 text-sm text-foreground whitespace-nowrap">${this.escapeHtml(row.date)}</td>
-                                <td class="px-4 py-3 text-sm font-semibold text-primary whitespace-nowrap">${this.escapeHtml(row.issueKey)}</td>
-                                <td class="px-4 py-3 text-sm text-foreground">${this.escapeHtml(row.issueSummary)}</td>
-                                <td class="px-4 py-3 text-sm font-medium text-primary whitespace-nowrap">${this.escapeHtml(row.timeSpent)}</td>
-                                <td class="px-4 py-3 text-sm text-foreground/80 max-w-md">${row.comment ? this.escapeHtml(row.comment) : '<span class="text-muted-foreground italic">No comment</span>'}</td>
-                                <td class="px-4 py-3 text-sm text-muted-foreground whitespace-nowrap">${this.escapeHtml(row.reportedBy)}</td>
+                                <td class="px-3 py-2 text-foreground whitespace-nowrap">${this.escapeHtml(row.date)}</td>
+                                <td class="px-3 py-2 text-muted-foreground whitespace-nowrap">${row.startTime ? this.escapeHtml(row.startTime) : '-'}</td>
+                                <td class="px-3 py-2 whitespace-nowrap">
+                                    <span class="inline-flex items-center gap-1">
+                                        ${row.issueTypeIcon ? `<img src="${row.issueTypeIcon}" alt="" class="w-4 h-4">` : ''}
+                                        <span class="text-muted-foreground">${this.escapeHtml(row.issueType)}</span>
+                                    </span>
+                                </td>
+                                <td class="px-3 py-2 font-semibold text-primary whitespace-nowrap">${this.escapeHtml(row.issueKey)}</td>
+                                <td class="px-3 py-2 text-foreground max-w-xs truncate" title="${this.escapeHtml(row.issueSummary)}">${this.escapeHtml(row.issueSummary)}</td>
+                                <td class="px-3 py-2 whitespace-nowrap">
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${this.getStatusClass(row.statusCategory)}">${this.escapeHtml(row.status)}</span>
+                                </td>
+                                <td class="px-3 py-2 whitespace-nowrap">
+                                    <span class="inline-flex items-center gap-1 text-muted-foreground">
+                                        ${row.priorityIcon ? `<img src="${row.priorityIcon}" alt="" class="w-3 h-3">` : ''}
+                                        ${this.escapeHtml(row.priority)}
+                                    </span>
+                                </td>
+                                <td class="px-3 py-2 font-medium text-primary whitespace-nowrap">${this.escapeHtml(row.timeSpent)}</td>
+                                <td class="px-3 py-2 text-muted-foreground whitespace-nowrap">${row.originalEstimate ? this.escapeHtml(row.originalEstimate) : '-'}</td>
+                                <td class="px-3 py-2 text-foreground/80 max-w-xs truncate" title="${this.escapeHtml(row.comment)}">${row.comment ? this.escapeHtml(row.comment) : '<span class="text-muted-foreground italic">-</span>'}</td>
+                                <td class="px-3 py-2 text-muted-foreground whitespace-nowrap">${this.escapeHtml(row.assignee)}</td>
+                                <td class="px-3 py-2 text-muted-foreground whitespace-nowrap">${row.author ? this.escapeHtml(row.author) : '-'}</td>
+                                <td class="px-3 py-2 text-muted-foreground whitespace-nowrap text-xs">${row.updated ? this.escapeHtml(row.updated) : '-'}</td>
                             </tr>
                         `).join('')}
                     </tbody>
                 </table>
             </div>
         `;
-        
+
         resultsContainer.innerHTML = tableHtml;
     }
     
@@ -598,6 +671,19 @@ class WorklogForm {
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
+    }
+
+    getStatusClass(statusCategory) {
+        switch (statusCategory?.toLowerCase()) {
+            case 'done':
+                return 'bg-green-100 text-green-800 border border-green-200';
+            case 'in progress':
+                return 'bg-blue-100 text-blue-800 border border-blue-200';
+            case 'to do':
+                return 'bg-gray-100 text-gray-800 border border-gray-200';
+            default:
+                return 'bg-muted text-muted-foreground';
+        }
     }
     
     isDateRangeInvalid() {

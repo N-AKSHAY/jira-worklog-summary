@@ -27,7 +27,7 @@ class WorklogRepository(BaseRepository, IWorklogRepository):
             
             search_result = self._jira_client.search_issues(
                 jql=jql,
-                fields=["summary", "reporter"],
+                fields=["summary", "reporter", "issuetype", "status", "priority", "assignee", "timeoriginalestimate"],
                 max_results=100
             )
         except ExternalServiceError:
@@ -51,10 +51,35 @@ class WorklogRepository(BaseRepository, IWorklogRepository):
             fields = issue["fields"]
             issue_summary = fields["summary"]
             reporter = fields.get("reporter", {})
+            assignee = fields.get("assignee", {})
+            issue_type = fields.get("issuetype", {})
+            status = fields.get("status", {})
+            priority = fields.get("priority", {})
+            original_estimate = fields.get("timeoriginalestimate")
 
             reporter_info = {
-                "accountId": reporter.get("accountId"),
-                "displayName": reporter.get("displayName")
+                "accountId": reporter.get("accountId") if reporter else None,
+                "displayName": reporter.get("displayName") if reporter else "Unknown"
+            }
+
+            assignee_info = {
+                "accountId": assignee.get("accountId") if assignee else None,
+                "displayName": assignee.get("displayName") if assignee else "Unassigned"
+            }
+
+            issue_type_info = {
+                "name": issue_type.get("name") if issue_type else "Unknown",
+                "iconUrl": issue_type.get("iconUrl") if issue_type else None
+            }
+
+            status_info = {
+                "name": status.get("name") if status else "Unknown",
+                "statusCategory": status.get("statusCategory", {}).get("name") if status else None
+            }
+
+            priority_info = {
+                "name": priority.get("name") if priority else "Unknown",
+                "iconUrl": priority.get("iconUrl") if priority else None
             }
 
             try:
@@ -89,6 +114,12 @@ class WorklogRepository(BaseRepository, IWorklogRepository):
                     "issueKey": issue_key,
                     "issueSummary": issue_summary,
                     "reportedBy": reporter_info,
+                    "assignee": assignee_info,
+                    "issueType": issue_type_info,
+                    "status": status_info,
+                    "priority": priority_info,
+                    "originalEstimate": original_estimate,
+                    "originalEstimateFormatted": format_seconds(original_estimate) if original_estimate else None,
                     "worklogSummary": {"totalTimeSpentSeconds": 0},
                     "worklogs": []
                 })
@@ -96,11 +127,45 @@ class WorklogRepository(BaseRepository, IWorklogRepository):
                 issue_entry = day_entry["issues"][issue_key]
                 time_seconds = wl["timeSpentSeconds"]
 
+                # Extract worklog author info
+                worklog_author = wl.get("author", {})
+                worklog_author_info = {
+                    "accountId": worklog_author.get("accountId"),
+                    "displayName": worklog_author.get("displayName", "Unknown")
+                }
+
+                # Parse started timestamp
+                started_raw = wl.get("started", "")
+                started_date = started_raw[:10] if started_raw else ""
+                started_time = ""
+                if len(started_raw) >= 19:
+                    try:
+                        started_dt = datetime.fromisoformat(started_raw.replace("Z", "+00:00").split("+")[0])
+                        started_time = started_dt.strftime("%H:%M")
+                    except:
+                        started_time = started_raw[11:16] if len(started_raw) > 16 else ""
+
+                # Parse updated timestamp
+                updated_raw = wl.get("updated", "")
+                updated_formatted = ""
+                if updated_raw:
+                    try:
+                        updated_dt = datetime.fromisoformat(updated_raw.replace("Z", "+00:00").split("+")[0])
+                        updated_formatted = updated_dt.strftime("%d-%m-%Y %H:%M")
+                    except:
+                        updated_formatted = updated_raw[:16] if len(updated_raw) > 16 else updated_raw
+
                 issue_entry["worklogs"].append({
                     "worklogId": wl["id"],
                     "comment": extract_comment(wl.get("comment")),
                     "timeSpentSeconds": time_seconds,
-                    "timeSpentFormatted": format_seconds(time_seconds)
+                    "timeSpentFormatted": format_seconds(time_seconds),
+                    "started": started_raw,
+                    "startedDate": started_date,
+                    "startedTime": started_time,
+                    "updated": updated_raw,
+                    "updatedFormatted": updated_formatted,
+                    "author": worklog_author_info
                 })
 
                 issue_entry["worklogSummary"]["totalTimeSpentSeconds"] += time_seconds

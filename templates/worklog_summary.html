@@ -220,7 +220,11 @@
                                     {% for issue in day.issues[:3] %}
                                         <div class="flex items-start gap-3 p-3 rounded-lg bg-muted/50 hover:bg-muted/70 transition-colors">
                                             <div class="flex-shrink-0 mt-0.5">
+                                                {% if issue.issueType and issue.issueType.iconUrl %}
+                                                <img src="{{ issue.issueType.iconUrl }}" alt="{{ issue.issueType.name }}" class="w-4 h-4" title="{{ issue.issueType.name }}">
+                                                {% else %}
                                                 <div class="w-2 h-2 rounded-full bg-primary"></div>
+                                                {% endif %}
                                             </div>
                                             <div class="flex-1 min-w-0">
                                                 <div class="flex items-start justify-between gap-2">
@@ -230,7 +234,23 @@
                                                     </h3>
                                                     <span class="flex-shrink-0 text-xs font-medium text-primary">{{ issue.worklogSummary.totalTimeSpentFormatted }}</span>
                                                 </div>
-                                                <p class="text-xs text-muted-foreground mt-1">{{ issue.worklogs|length }} worklog{{ 's' if issue.worklogs|length != 1 else '' }}</p>
+                                                <div class="flex items-center gap-2 mt-1 flex-wrap">
+                                                    {% set status_class = 'bg-muted text-muted-foreground' %}
+                                                    {% if issue.status and issue.status.statusCategory %}
+                                                        {% if issue.status.statusCategory|lower == 'done' %}
+                                                            {% set status_class = 'bg-green-100 text-green-800 border border-green-200' %}
+                                                        {% elif issue.status.statusCategory|lower == 'in progress' %}
+                                                            {% set status_class = 'bg-blue-100 text-blue-800 border border-blue-200' %}
+                                                        {% elif issue.status.statusCategory|lower == 'to do' %}
+                                                            {% set status_class = 'bg-gray-100 text-gray-800 border border-gray-200' %}
+                                                        {% endif %}
+                                                    {% endif %}
+                                                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs {{ status_class }}">{{ issue.status.name if issue.status else 'Unknown' }}</span>
+                                                    {% if issue.priority and issue.priority.name %}
+                                                    <span class="text-xs text-muted-foreground">{{ issue.priority.name }}</span>
+                                                    {% endif %}
+                                                    <span class="text-xs text-muted-foreground">{{ issue.worklogs|length }} worklog{{ 's' if issue.worklogs|length != 1 else '' }}</span>
+                                                </div>
                                             </div>
                                         </div>
                                     {% endfor %}
@@ -247,37 +267,83 @@
                                             <div class="rounded-lg border-l-4 border-primary bg-muted/30 p-4 hover:bg-muted/50 transition-colors">
                                                 <div class="flex items-start justify-between mb-3">
                                                     <div class="flex-1">
-                                                        <h3 class="font-semibold text-base leading-tight text-foreground mb-1">
-                                                            <span class="text-primary">{{ issue.issueKey }}</span> — {{ issue.issueSummary }}
-                                                        </h3>
-                                                        <div class="flex items-center gap-3 text-xs text-muted-foreground">
-                                                            <span class="flex items-center gap-1">
+                                                        <div class="flex items-center gap-2 mb-1">
+                                                            {% if issue.issueType and issue.issueType.iconUrl %}
+                                                            <img src="{{ issue.issueType.iconUrl }}" alt="{{ issue.issueType.name }}" class="w-4 h-4" title="{{ issue.issueType.name }}">
+                                                            {% endif %}
+                                                            <h3 class="font-semibold text-base leading-tight text-foreground">
+                                                                <span class="text-primary">{{ issue.issueKey }}</span> — {{ issue.issueSummary }}
+                                                            </h3>
+                                                        </div>
+                                                        <div class="flex items-center gap-2 mt-2 flex-wrap">
+                                                            {% set status_class = 'bg-muted text-muted-foreground' %}
+                                                            {% if issue.status and issue.status.statusCategory %}
+                                                                {% if issue.status.statusCategory|lower == 'done' %}
+                                                                    {% set status_class = 'bg-green-100 text-green-800 border border-green-200' %}
+                                                                {% elif issue.status.statusCategory|lower == 'in progress' %}
+                                                                    {% set status_class = 'bg-blue-100 text-blue-800 border border-blue-200' %}
+                                                                {% elif issue.status.statusCategory|lower == 'to do' %}
+                                                                    {% set status_class = 'bg-gray-100 text-gray-800 border border-gray-200' %}
+                                                                {% endif %}
+                                                            {% endif %}
+                                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ status_class }}">{{ issue.status.name if issue.status else 'Unknown' }}</span>
+                                                            {% if issue.priority and issue.priority.name %}
+                                                            <span class="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                                                                {% if issue.priority.iconUrl %}
+                                                                <img src="{{ issue.priority.iconUrl }}" alt="" class="w-3 h-3">
+                                                                {% endif %}
+                                                                {{ issue.priority.name }}
+                                                            </span>
+                                                            {% endif %}
+                                                            {% if issue.issueType and issue.issueType.name %}
+                                                            <span class="text-xs text-muted-foreground">{{ issue.issueType.name }}</span>
+                                                            {% endif %}
+                                                        </div>
+                                                        <div class="flex items-center gap-4 mt-2 text-xs text-muted-foreground flex-wrap">
+                                                            <span class="flex items-center gap-1" title="Reporter">
                                                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
                                                                 </svg>
-                                                                {{ issue.reportedBy.displayName }}
+                                                                Reporter: {{ issue.reportedBy.displayName if issue.reportedBy else 'Unknown' }}
                                                             </span>
-                                                            <span>•</span>
+                                                            <span class="flex items-center gap-1" title="Assignee">
+                                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                                                </svg>
+                                                                Assignee: {{ issue.assignee.displayName if issue.assignee else 'Unassigned' }}
+                                                            </span>
                                                             <span class="font-medium text-primary">{{ issue.worklogSummary.totalTimeSpentFormatted }}</span>
+                                                            {% if issue.originalEstimateFormatted %}
+                                                            <span class="text-xs px-1.5 py-0.5 rounded bg-muted">{{ issue.worklogSummary.totalTimeSpentFormatted }} / {{ issue.originalEstimateFormatted }} est.</span>
+                                                            {% endif %}
                                                         </div>
                                                     </div>
                                                 </div>
-                                                <div class="space-y-2.5 pl-4 border-l-2 border-primary/30">
+                                                <div class="space-y-1 pl-4 border-l-2 border-primary/30">
                                                     {% for wl in issue.worklogs %}
-                                                        <div class="flex items-start gap-3 py-1.5">
+                                                        <div class="flex items-start gap-3 py-2 border-b border-border/50 last:border-0">
                                                             <div class="flex-shrink-0 mt-1">
                                                                 <svg class="w-4 h-4 text-primary/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                                                 </svg>
                                                             </div>
                                                             <div class="flex-1">
-                                                                <div class="flex items-center gap-2 mb-1">
+                                                                <div class="flex items-center gap-2 mb-1 flex-wrap">
                                                                     <span class="font-semibold text-sm text-primary">{{ wl.timeSpentFormatted }}</span>
+                                                                    {% if wl.startedTime %}
+                                                                    <span class="text-xs text-muted-foreground">@ {{ wl.startedTime }}</span>
+                                                                    {% endif %}
+                                                                    {% if wl.author and wl.author.displayName %}
+                                                                    <span class="text-xs text-muted-foreground">by {{ wl.author.displayName }}</span>
+                                                                    {% endif %}
                                                                 </div>
                                                                 {% if wl.comment %}
                                                                 <p class="text-sm text-foreground/80 leading-relaxed">{{ wl.comment }}</p>
                                                                 {% else %}
                                                                 <p class="text-xs text-muted-foreground italic">No comment</p>
+                                                                {% endif %}
+                                                                {% if wl.updatedFormatted %}
+                                                                <p class="text-xs text-muted-foreground mt-1">Updated: {{ wl.updatedFormatted }}</p>
                                                                 {% endif %}
                                                             </div>
                                                         </div>
