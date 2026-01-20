@@ -79,8 +79,8 @@
         </div>
     </div>
 
-    <!-- Form Section -->
-    <div class="border-b bg-card">
+    <!-- Form Section (Sticky Filter) -->
+    <div class="sticky top-16 z-40 border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
         <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-4">
             <form method="post" id="worklogForm">
                 <div class="flex flex-col sm:flex-row gap-3 items-end justify-between">
@@ -147,16 +147,16 @@
                                 class="quick-range-btn inline-flex items-center justify-center rounded-md border border-input bg-background px-3 py-1.5 text-xs font-medium text-foreground shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
                             Last Month
                         </button>
-                        <button type="button" 
-                                data-range="thisYear"
-                                class="quick-range-btn inline-flex items-center justify-center rounded-md border border-input bg-background px-3 py-1.5 text-xs font-medium text-foreground shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
-                            This Year
-                        </button>
-                        <button type="button" 
-                                data-range="lastYear"
-                                class="quick-range-btn inline-flex items-center justify-center rounded-md border border-input bg-background px-3 py-1.5 text-xs font-medium text-foreground shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
-                            Last Year
-                        </button>
+<!--                        <button type="button" -->
+<!--                                data-range="thisYear"-->
+<!--                                class="quick-range-btn inline-flex items-center justify-center rounded-md border border-input bg-background px-3 py-1.5 text-xs font-medium text-foreground shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">-->
+<!--                            This Year-->
+<!--                        </button>-->
+<!--                        <button type="button" -->
+<!--                                data-range="lastYear"-->
+<!--                                class="quick-range-btn inline-flex items-center justify-center rounded-md border border-input bg-background px-3 py-1.5 text-xs font-medium text-foreground shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">-->
+<!--                            Last Year-->
+<!--                        </button>-->
                         </div>
                     </div>
                 </div>
@@ -165,7 +165,7 @@
     </div>
 
     <!-- Content Section -->
-    <main class="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <main class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24">
         <!-- Loading Indicator -->
         <div id="loadingIndicator" class="hidden flex items-center justify-center py-12">
             <div class="flex flex-col items-center gap-4">
@@ -184,7 +184,7 @@
         {% if data and data|length > 0 %}
         <script type="application/json" id="serverData">{{ data | tojson }}</script>
         {% endif %}
-        <div id="resultsContainer">
+        <div id="resultsContainer" class="overflow-y-auto">
             {% if data and data|length > 0 %}
                 <div class="space-y-4">
                     {% for day in data %}
@@ -304,12 +304,12 @@
     </main>
 
     <!-- Footer -->
-    <footer class="border-t bg-card mt-auto">
+    <footer class="fixed bottom-0 left-0 right-0 z-40 border-t bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
         <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-4">
             <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
                 <div class="flex items-center gap-2">
                     <img src="/static/img/logo.png" alt="Stabilix Logo" class="h-6 w-auto opacity-60">
-                    <span class="text-sm text-muted-foreground">© 2024 Stabilix Solutions. All rights reserved.</span>
+                    <span class="text-sm text-muted-foreground"> © <span id="year"></span> Stabilix Solutions. All rights reserved.</span>
                 </div>
                 <div class="text-xs text-muted-foreground">
                     Jira Worklog Summary
@@ -320,6 +320,9 @@
 </div>
 
 <script src="/static/js/worklog-form.js"></script>
+<script>
+document.getElementById("year").textContent = new Date().getFullYear();
+</script>
 <script>
 document.addEventListener('DOMContentLoaded', () => {
     const toggleButtons = document.querySelectorAll('.day-details-toggle');
